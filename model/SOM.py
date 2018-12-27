@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import sys
+import datetime
  
 class SOM(object):
     """
@@ -12,7 +13,7 @@ class SOM(object):
     #To check if the SOM has been trained
     _trained = False
  
-    def __init__(self, m, n, dim, n_iterations=100, alpha=.3, sigma=None):
+    def __init__(self, m, n, dim, n_iterations=100, alpha=.3, sigma=None, save = None, restore = None):
         """
         Initializes all necessary components of the TensorFlow
         Graph.
@@ -43,6 +44,15 @@ class SOM(object):
 
         self.__init_graph(alpha, sigma, dim)
 
+        self._saver = tf.train.Saver([self._weightage_vects])
+        self._save = save
+        self._restore = restore
+        
+        if self._restore is not None:
+            self._saver.restore(self._sess, tf.train.latest_checkpoint(self._restore))   
+            print(tf.train.latest_checkpoint(self._restore))     
+            print(self._sess.run(self._weightage_vects))
+
     def __init_graph(self, alpha, sigma, dim): 
         ##INITIALIZE GRAPH
         self._graph = tf.Graph()
@@ -55,7 +65,7 @@ class SOM(object):
             #Randomly initialized weightage vectors for all neurons,
             #stored together as a matrix Variable of size [m*n, dim]
             self._weightage_vects = tf.Variable(tf.random_normal([self._m*self._n, dim]))
- 
+
             #Matrix of size [m*n, 2] for SOM grid locations
             #of neurons
             self._location_vects = tf.constant(np.array(
@@ -125,7 +135,7 @@ class SOM(object):
                                           new_weightages_op)                                       
  
             ##INITIALIZE SESSION
-            self._sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+            self._sess = tf.Session(config=tf.ConfigProto(log_device_placement=False))
  
             ##INITIALIZE VARIABLES
             init_op = tf.initialize_all_variables()
@@ -142,7 +152,7 @@ class SOM(object):
             for j in range(n):
                 yield np.array([i, j])
  
-    def train(self, input_vects):
+    def train(self, input_vects, checkpoint_len=10):
         """
         Trains the SOM.
         'input_vects' should be an iterable of 1-D NumPy arrays with
@@ -151,9 +161,19 @@ class SOM(object):
         taken as starting conditions for training.
         """
 
+        # Reset iter_no in case of restoring the model
+        if self._restore is not None:
+            latest_checkpoint = tf.train.latest_checkpoint(self._restore)
+            iter_no = abs(int(latest_checkpoint.split('/')[-1]))
+        else:
+            iter_no = 0
+
+        isTrained = False
+
         #Training iterations
-        for iter_no in range(self._n_iterations):
-            start_time = time.time()
+        while iter_no < self._n_iterations:            
+            if iter_no % checkpoint_len == 0 or isTrained == False:
+                start_time = time.time()
 
             #Train with each vector one by one
             for input_vect in input_vects:
@@ -162,10 +182,15 @@ class SOM(object):
                                         self._iter_input: iter_no})
 
             #Keep track the current training progress
-            end_time = time.time()
-            segment_length = 10
-            if iter_no % segment_length == 0:
-                print('Elapsed time = %fs, iter_no = %d' % (end_time - start_time, iter_no))
+            if iter_no % checkpoint_len == (checkpoint_len - 1):
+                end_time = time.time()
+                print('%s, Elapsed time = %fs, iter_no = %d' % (str(datetime.datetime.now()), end_time - start_time, iter_no))
+                if self._save is not None:
+                    #print(self._sess.run(self._weightage_vects))
+                    self._saver.save(self._sess, save_path=self._save, global_step=iter_no)
+            
+            iter_no += 1
+            isTrained = True
  
         #Store a centroid grid for easy retrieval later on
         centroid_grid = [[] for i in range(self._m)]
