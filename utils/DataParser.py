@@ -38,9 +38,9 @@ class DataParser():
     def convertTextTarget(self, data_col, alias):
         for i in range(len(data_col)):
             counter = 0
-            for label in alias:            
-                counter += 1
+            for label in alias:                     
                 if data_col[i] == label:
                     data_col[i] = counter
                     break
+                counter += 1
         return data_col
