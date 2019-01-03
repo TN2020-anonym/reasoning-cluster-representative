@@ -19,9 +19,9 @@ class DataReader():
     def read(self, file_idx = None, separator = ',', delimiter = ','):
         if file_idx is None:
             for id in range(len(self.data_files)):
-                self.__read_file(id)
+                self.__read_file(id, separator, delimiter)
         else:
-            self.__read_file(file_idx)
+            self.__read_file(file_idx, separator, delimiter)
         
         self.data = self.data[1:, :]
 
