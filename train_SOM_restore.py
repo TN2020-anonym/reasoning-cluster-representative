@@ -7,6 +7,7 @@ from utils.DataParser import *
 from utils.DataReader import *
 from utils.DataScaler import *
 from model.SOM import *
+from sklearn.preprocessing import MinMaxScaler
 
 def getUniqueAccidentType(accidents):
     accident_type = set()
@@ -80,8 +81,6 @@ if __name__ == "__main__":
 
     print('======== Supplying data ============')
     dr.read()
-    
-    #dump_result(output_path + 'data_read.csv', dr.getData(), column_names=col_name)
 
     print('======== Extracting data ============')
     # ============================================ #
@@ -123,8 +122,9 @@ if __name__ == "__main__":
 
     # Get distance to neighbours
     distance = som.distance_map()
+    distance_scaler = MinMaxScaler()
+    distance = distance_scaler.fit_transform(distance)
 
-    
     # ============================================ #
     # Heatmap for datatypes
     plot_heatmap(cluster_grid, col_name, output_path)
