@@ -3,6 +3,7 @@ import numpy as np
 import time
 import sys
 import datetime
+import math
  
 class SOM(object):
     """
@@ -233,3 +234,52 @@ class SOM(object):
             to_return.append(self._locations[min_index])
  
         return to_return
+
+    def distance_map(self):
+        rows = len(self._centroid_grid)
+        columns = len(self._centroid_grid[0])
+
+        distance = np.zeros((rows, columns))
+        for r in range(rows):
+            for c in range(columns):
+                weight = self._centroid_grid[r][c]
+
+                # Extract location of neighbours
+                left_neighbour_loc = np.array([r, c-1])
+                left_neighbour_loc = np.array([r, c-1])
+                right_neighbour_loc = np.array([r, c+1])
+                upper_neighbour_loc = np.array([r-1, c])
+                down_neighbour_loc = np.array([r+1, c])
+
+                # Determine the eligibility of neighbours
+                left_neighbour = np.all([left_neighbour_loc >= 0])
+                right_neighbour = np.all([right_neighbour_loc < columns])
+                upper_neighbour = np.all([upper_neighbour_loc >= 0])
+                down_neighbour = np.all([down_neighbour_loc < rows])
+                
+                # Calculate distance
+                if left_neighbour == True:
+                    distance[r, c] += np.sqrt(
+                                        np.sum(
+                                            (weight - self._centroid_grid[left_neighbour_loc[0]][left_neighbour_loc[1]]) ** 2)
+                                            )
+                
+                if right_neighbour == True:
+                    distance[r, c] += np.sqrt(
+                                        np.sum(
+                                            (weight - self._centroid_grid[right_neighbour_loc[0]][right_neighbour_loc[1]]) ** 2)
+                                            )
+
+                if upper_neighbour == True:
+                    distance[r, c] += np.sqrt(
+                                        np.sum(
+                                            (weight - self._centroid_grid[upper_neighbour_loc[0]][upper_neighbour_loc[1]]) ** 2)
+                                            )
+
+                if down_neighbour == True:
+                    distance[r, c] += np.sqrt(
+                                        np.sum(
+                                            (weight - self._centroid_grid[down_neighbour_loc[0]][down_neighbour_loc[1]]) ** 2)
+                                            )
+
+        return distance

@@ -42,6 +42,12 @@ def plot_heatmap(data, col_name, wd):
         
     #plt.show()
 
+def plot_distance_map(distance, wd):
+    plt.figure()
+    sns.heatmap(distance, linewidth=.5)
+    plt.title('distance')
+    plt.savefig(wd + 'distance' + '.png')
+
 def dump_result(path, data, column_names):
     import pandas as pd
     df = pd.DataFrame(data, columns=column_names)
@@ -60,7 +66,6 @@ if __name__ == "__main__":
     # Data location
     wd = os.path.dirname(os.path.abspath(__file__)) + '/'
     data_path = wd + 'data/'
-    data_path += 'output/'
     output_path = wd + 'output/'
 
     # ============================================ #
@@ -96,7 +101,7 @@ if __name__ == "__main__":
     # Train SOM
     m = 20
     n = 20
-    n_iter = 2000
+    n_iter = 15000
     som = SOM(m, n, len(col_name) - 1, n_iter, save=wd + 'checkpoint/', restore=wd + 'checkpoint/')
     som.train(X, checkpoint_len=2)
     
@@ -115,8 +120,13 @@ if __name__ == "__main__":
     mapped = som.map_vects(X)
     mapped = np.array(mapped)
     mapped = np.hstack((mapped, y.reshape((-1, 1))))
+
+    # Get distance to neighbours
+    distance = som.distance_map()
+
     
     # ============================================ #
     # Heatmap for datatypes
     plot_heatmap(cluster_grid, col_name, output_path)
+    plot_distance_map(distance, output_path)
     dump_result(output_path + 'mapped.csv', mapped, ('X', 'Y', 'target'))
